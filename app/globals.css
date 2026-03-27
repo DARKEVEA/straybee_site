@@ -1,0 +1,237 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --industrial-black-rgb: 16 17 21;
+  --paper-white-rgb: 243 240 232;
+  --constructivist-red-rgb: 229 49 34;
+  --warning-yellow-rgb: 243 201 50;
+  --industrial-black: rgb(var(--industrial-black-rgb));
+  --paper-white: rgb(var(--paper-white-rgb));
+  --constructivist-red: rgb(var(--constructivist-red-rgb));
+  --warning-yellow: rgb(var(--warning-yellow-rgb));
+  --font-swiss: "Neue Haas Grotesk", "Helvetica Neue", "Univers", "Akzidenz-Grotesk", var(--font-ibm-plex),
+    "Helvetica", "Arial", sans-serif;
+  --grid-line: rgb(16 17 21 / 17%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--paper-white);
+  color: var(--industrial-black);
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--paper-white);
+  color: var(--industrial-black);
+  font-family: var(--font-swiss), "PingFang SC", "Noto Sans CJK SC", "Microsoft YaHei", sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.poster-surface {
+  position: relative;
+  background-image:
+    linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+  background-size: 124px 124px;
+}
+
+.poster-heading {
+  font-family: var(--font-swiss);
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.hard-cut {
+  transition-duration: 140ms;
+  transition-property: color, background-color, border-color, opacity, filter, transform;
+  transition-timing-function: steps(2, end);
+}
+
+.diagonal-line {
+  position: absolute;
+  left: 48%;
+  top: 5%;
+  width: 2px;
+  height: 72%;
+  transform: rotate(24deg);
+  transform-origin: top center;
+  background: var(--constructivist-red);
+  opacity: 0.95;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.works-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 800px) {
+  .works-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .works-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.work-card {
+  position: relative;
+  overflow: clip;
+}
+
+.work-card-image {
+  filter: grayscale(1) contrast(1.38);
+  transform: scale(1);
+}
+
+.tear-edge {
+  position: absolute;
+  left: 0;
+  top: -1px;
+  width: 100%;
+  height: 20%;
+  background: var(--paper-white);
+  opacity: 0.55;
+  clip-path: polygon(0 10%, 4% 22%, 9% 16%, 16% 29%, 23% 20%, 31% 31%, 39% 25%, 47% 35%, 56% 28%, 65% 39%, 73% 33%, 82% 43%, 91% 36%, 100% 48%, 100% 0, 0 0);
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+
+.glitch-overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.glitch-strip {
+  position: absolute;
+  height: 12px;
+  width: 34%;
+  mix-blend-mode: screen;
+  background: linear-gradient(to right, var(--constructivist-red), var(--warning-yellow), #14d6ff);
+}
+
+.glitch-strip-a {
+  left: 8%;
+  top: 16%;
+}
+
+.glitch-strip-b {
+  right: 6%;
+  bottom: 20%;
+}
+
+.glitch-strip-c {
+  left: 22%;
+  bottom: 33%;
+}
+
+.crosshair-cursor {
+  position: fixed;
+  left: -100px;
+  top: -100px;
+  width: 28px;
+  height: 28px;
+  z-index: 9999;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+
+.crosshair-line {
+  position: absolute;
+  background: var(--warning-yellow);
+}
+
+.crosshair-line-x {
+  left: 0;
+  top: 50%;
+  width: 100%;
+  height: 2px;
+  transform: translateY(-50%);
+}
+
+.crosshair-line-y {
+  left: 50%;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  transform: translateX(-50%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .work-card:hover .work-card-image {
+    filter: grayscale(0) contrast(1.05);
+    transform: scale(1.035);
+  }
+
+  .work-card:hover .glitch-overlay {
+    opacity: 0.92;
+  }
+
+  .work-card:hover .glitch-strip-a {
+    transform: translateX(-6px);
+  }
+
+  .work-card:hover .glitch-strip-b {
+    transform: translateX(7px);
+  }
+
+  .work-card:hover .glitch-strip-c {
+    transform: translateX(3px) translateY(4px);
+  }
+
+  .cursor-enabled {
+    cursor: none;
+  }
+}
+
+@media (hover: none), (pointer: coarse) {
+  .work-card-image {
+    filter: grayscale(0.2) contrast(1.15);
+  }
+
+  .glitch-overlay {
+    display: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  .diagonal-line {
+    opacity: 0.45;
+    left: 50%;
+    height: 58%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .hard-cut {
+    transition: none !important;
+  }
+
+  .diagonal-line,
+  .glitch-overlay {
+    display: none;
+  }
+}
