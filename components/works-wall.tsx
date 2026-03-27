@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import clsx from "clsx";
 import type { Locale, WorkEntry } from "@/lib/types";
@@ -23,8 +23,238 @@ type WorksWallProps = {
   labels: WorksWallLabels;
 };
 
+type RandomBar = {
+  top: number;
+  left: number;
+  width: number;
+  height: number;
+  angle: number;
+  color: string;
+  opacity: number;
+};
+
 const baseVisibleCount = 6;
 const loadMoreStep = 3;
+const fallbackPalette = ["rgb(229 49 34)", "rgb(243 201 50)", "rgb(20 214 255)", "rgb(253 88 152)"];
+
+const getSaturation = (r: number, g: number, b: number): number => {
+  const rr = r / 255;
+  const gg = g / 255;
+  const bb = b / 255;
+  const max = Math.max(rr, gg, bb);
+  const min = Math.min(rr, gg, bb);
+  const lightness = (max + min) / 2;
+
+  if (max === min) {
+    return 0;
+  }
+
+  const delta = max - min;
+  return lightness > 0.5 ? delta / (2 - max - min) : delta / (max + min);
+};
+
+const extractPaletteFromImage = async (src: string): Promise<string[]> => {
+  if (typeof window === "undefined") {
+    return fallbackPalette;
+  }
+
+  return new Promise((resolve) => {
+    const image = new window.Image();
+    image.decoding = "async";
+    image.src = src;
+
+    image.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        const sampleSize = 48;
+        canvas.width = sampleSize;
+        canvas.height = sampleSize;
+
+        const context = canvas.getContext("2d");
+        if (!context) {
+          resolve(fallbackPalette);
+          return;
+        }
+
+        context.drawImage(image, 0, 0, sampleSize, sampleSize);
+        const { data } = context.getImageData(0, 0, sampleSize, sampleSize);
+        const buckets = new Map<string, { count: number; r: number; g: number; b: number }>();
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const alpha = data[i + 3];
+          const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+          if (alpha < 150 || luminance < 16 || luminance > 245) {
+            continue;
+          }
+
+          const key = `${r >> 4}-${g >> 4}-${b >> 4}`;
+          const existing = buckets.get(key);
+
+          if (existing) {
+            existing.count += 1;
+            existing.r += r;
+            existing.g += g;
+            existing.b += b;
+          } else {
+            buckets.set(key, { count: 1, r, g, b });
+          }
+        }
+
+        const candidates = Array.from(buckets.values()).map((bucket) => {
+            const rr = Math.round(bucket.r / bucket.count);
+            const gg = Math.round(bucket.g / bucket.count);
+            const bb = Math.round(bucket.b / bucket.count);
+            const saturation = getSaturation(rr, gg, bb);
+            const score = bucket.count * (0.45 + saturation * 2.2);
+            return {
+              color: `rgb(${rr} ${gg} ${bb})`,
+              saturation,
+              score
+            };
+          });
+
+        const ranked = candidates.sort((a, b) => b.score - a.score);
+        const vivid = ranked.filter((entry) => entry.saturation >= 0.18).map((entry) => entry.color);
+        const neutral = ranked.filter((entry) => entry.saturation < 0.18).map((entry) => entry.color);
+
+        const merged = Array.from(new Set([...vivid.slice(0, 4), ...neutral.slice(0, 2)]));
+        if (vivid.length < 2) {
+          const boosted = Array.from(new Set([...fallbackPalette, ...merged]));
+          resolve(boosted.slice(0, 6));
+          return;
+        }
+
+        resolve([...merged, ...fallbackPalette].slice(0, 6));
+      } catch {
+        resolve(fallbackPalette);
+      }
+    };
+
+    image.onerror = () => {
+      resolve(fallbackPalette);
+    };
+  });
+};
+
+const createRandomBars = (palette: string[]): RandomBar[] => {
+  const count = Math.floor(Math.random() * 3) + 2;
+  const accentPool = palette.slice(0, Math.min(4, palette.length));
+
+  return Array.from({ length: count }).map(() => {
+    const isLine = Math.random() < 0.4;
+    return {
+      top: Math.random() * 84 + 8,
+      left: Math.random() * 84 + 8,
+      width: isLine ? Math.random() * 3 + 0.8 : Math.random() * 38 + 18,
+      height: isLine ? Math.random() * 44 + 26 : Math.random() * 10 + 4,
+      angle: Math.random() * 34 - 17,
+      color: accentPool[Math.floor(Math.random() * accentPool.length)] ?? fallbackPalette[0],
+      opacity: Math.random() * 0.33 + 0.52
+    };
+  });
+};
+
+type WorkCardProps = {
+  locale: Locale;
+  work: WorkEntry;
+  openLabel: string;
+};
+
+const WorkCard = ({ locale, work, openLabel }: WorkCardProps) => {
+  const [isActive, setIsActive] = useState(false);
+  const [palette, setPalette] = useState<string[]>(fallbackPalette);
+  const [bars, setBars] = useState<RandomBar[]>([]);
+
+  useEffect(() => {
+    let mounted = true;
+
+    extractPaletteFromImage(work.cover).then((nextPalette) => {
+      if (mounted) {
+        setPalette(nextPalette);
+      }
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [work.cover]);
+
+  const activate = () => {
+    setIsActive(true);
+    setBars(createRandomBars(palette));
+  };
+
+  const deactivate = () => {
+    setIsActive(false);
+  };
+
+  return (
+    <article
+      className={clsx("work-card hard-cut", isActive && "work-card-active")}
+      onPointerEnter={activate}
+      onPointerLeave={deactivate}
+    >
+      <div className="relative aspect-[4/5] overflow-hidden border border-industrial/35 bg-industrial">
+        <Image
+          src={work.cover}
+          alt={work.title[locale]}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="work-card-image hard-cut object-cover"
+        />
+        <div className="random-overlay" aria-hidden>
+          {bars.map((bar, index) => (
+            <span
+              key={`${work.id}-bar-${index}`}
+              className="random-bar hard-cut"
+              style={{
+                top: `${bar.top}%`,
+                left: `${bar.left}%`,
+                width: `${bar.width}%`,
+                height: `${bar.height}%`,
+                transform: `translate(-50%, -50%) rotate(${bar.angle}deg)`,
+                backgroundColor: bar.color,
+                opacity: bar.opacity
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-3 border-x border-b border-industrial/35 bg-paper/95 p-4">
+        <div className="flex items-start justify-between gap-4">
+          <h3 className="poster-heading text-xl leading-none text-industrial">{work.title[locale]}</h3>
+          <span className="font-mono text-xs uppercase tracking-[0.16em] text-industrial/70">{work.year}</span>
+        </div>
+        <p className="text-sm leading-relaxed text-industrial/85">{work.summary[locale]}</p>
+        <div className="flex flex-wrap gap-2">
+          {work.tags.map((tag) => (
+            <span
+              key={`${work.id}-${tag}`}
+              className="border border-industrial/30 px-2 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-industrial/70"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+        {work.links[0] ? (
+          <a
+            href={work.links[0].url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
+          >
+            {openLabel}
+          </a>
+        ) : null}
+      </div>
+    </article>
+  );
+};
 
 export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
   const [activeTag, setActiveTag] = useState("all");
@@ -110,61 +340,13 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
         </div>
       ) : (
         <div className="works-grid">
-          {visibleWorks.map((work, index) => (
-            <article
+          {visibleWorks.map((work) => (
+            <WorkCard
               key={work.id}
-              className={clsx(
-                "work-card hard-cut",
-                index % 5 === 0 ? "md:row-span-2" : "",
-                index % 4 === 0 ? "md:-translate-y-2" : ""
-              )}
-            >
-              <div className="relative aspect-[4/5] overflow-hidden border border-industrial/35 bg-industrial">
-                <Image
-                  src={work.cover}
-                  alt={work.title[locale]}
-                  fill
-                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                  className="work-card-image hard-cut object-cover"
-                />
-                <div className="glitch-overlay" aria-hidden>
-                  <span className="glitch-strip glitch-strip-a" />
-                  <span className="glitch-strip glitch-strip-b" />
-                  <span className="glitch-strip glitch-strip-c" />
-                </div>
-                <div className="tear-edge" aria-hidden />
-              </div>
-
-              <div className="space-y-3 border-x border-b border-industrial/35 bg-paper/95 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <h3 className="poster-heading text-xl leading-none text-industrial">{work.title[locale]}</h3>
-                  <span className="font-mono text-xs uppercase tracking-[0.16em] text-industrial/70">
-                    {work.year}
-                  </span>
-                </div>
-                <p className="text-sm leading-relaxed text-industrial/85">{work.summary[locale]}</p>
-                <div className="flex flex-wrap gap-2">
-                  {work.tags.map((tag) => (
-                    <span
-                      key={`${work.id}-${tag}`}
-                      className="border border-industrial/30 px-2 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-industrial/70"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-                {work.links[0] ? (
-                  <a
-                    href={work.links[0].url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
-                  >
-                    {labels.open}
-                  </a>
-                ) : null}
-              </div>
-            </article>
+              locale={locale}
+              work={work}
+              openLabel={labels.open}
+            />
           ))}
         </div>
       )}
