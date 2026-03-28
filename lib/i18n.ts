@@ -30,10 +30,6 @@ type Dictionary = {
     empty: string;
     open: string;
   };
-  method: {
-    title: string;
-    body: string;
-  };
   contact: {
     title: string;
     body: string;
@@ -67,11 +63,6 @@ const dictionaries: Record<Locale, Dictionary> = {
       empty: "没有匹配的作品，请调整筛选。",
       open: "打开链接"
     },
-    method: {
-      title: "METHOD / 方法论",
-      body:
-        "我把网页当成可交互的海报系统：先建立极严谨的网格，再通过撕纸边缘、错位叠压、硬切动效去打断它。视觉语言追求工业、直接、可感知。"
-    },
     contact: {
       title: "CONTACT / 协作",
       body: "如果你正在寻找视觉工程、创意前端或数字叙事合作，欢迎联系我。",
@@ -102,11 +93,6 @@ const dictionaries: Record<Locale, Dictionary> = {
       loadMore: "Load more",
       empty: "No works match these filters.",
       open: "Open link"
-    },
-    method: {
-      title: "METHOD",
-      body:
-        "I treat the site as a programmable poster: strict base grid first, then controlled disruptions using torn-paper edges, layered offsets, and hard-cut motion. Industrial, direct, legible."
     },
     contact: {
       title: "CONTACT",

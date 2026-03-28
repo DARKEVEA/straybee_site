@@ -77,13 +77,6 @@ export default async function LocalePage({ params }: LocalePageProps) {
 
         <WorksWall locale={locale} works={works} labels={dictionary.works} />
 
-        <section id="method" className="mt-24 grid gap-6 border border-industrial/30 bg-paper/88 p-6 md:grid-cols-[0.7fr_1.3fr] md:p-8">
-          <h2 className="poster-heading text-4xl uppercase leading-none text-industrial md:text-6xl">
-            {dictionary.method.title}
-          </h2>
-          <p className="max-w-3xl text-base leading-relaxed text-industrial/85">{dictionary.method.body}</p>
-        </section>
-
         <section id="contact" className="mt-16 mb-10 grid gap-6 border border-industrial/30 bg-industrial p-6 text-paper md:grid-cols-[0.7fr_1.3fr] md:p-8">
           <h2 className="poster-heading text-4xl uppercase leading-none text-paper md:text-6xl">{dictionary.contact.title}</h2>
           <div className="space-y-4">

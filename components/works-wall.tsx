@@ -33,8 +33,15 @@ type RandomBar = {
   opacity: number;
 };
 
-const baseVisibleCount = 6;
-const loadMoreStep = 3;
+type WorksWallUiText = {
+  previous: string;
+  next: string;
+  page: string;
+  details: string;
+  close: string;
+};
+
+const pageSize = 6;
 const fallbackPalette = ["rgb(229 49 34)", "rgb(243 201 50)", "rgb(20 214 255)", "rgb(253 88 152)"];
 
 const getSaturation = (r: number, g: number, b: number): number => {
@@ -105,17 +112,17 @@ const extractPaletteFromImage = async (src: string): Promise<string[]> => {
         }
 
         const candidates = Array.from(buckets.values()).map((bucket) => {
-            const rr = Math.round(bucket.r / bucket.count);
-            const gg = Math.round(bucket.g / bucket.count);
-            const bb = Math.round(bucket.b / bucket.count);
-            const saturation = getSaturation(rr, gg, bb);
-            const score = bucket.count * (0.45 + saturation * 2.2);
-            return {
-              color: `rgb(${rr} ${gg} ${bb})`,
-              saturation,
-              score
-            };
-          });
+          const rr = Math.round(bucket.r / bucket.count);
+          const gg = Math.round(bucket.g / bucket.count);
+          const bb = Math.round(bucket.b / bucket.count);
+          const saturation = getSaturation(rr, gg, bb);
+          const score = bucket.count * (0.45 + saturation * 2.2);
+          return {
+            color: `rgb(${rr} ${gg} ${bb})`,
+            saturation,
+            score
+          };
+        });
 
         const ranked = candidates.sort((a, b) => b.score - a.score);
         const vivid = ranked.filter((entry) => entry.saturation >= 0.18).map((entry) => entry.color);
@@ -162,9 +169,11 @@ type WorkCardProps = {
   locale: Locale;
   work: WorkEntry;
   openLabel: string;
+  detailsLabel: string;
+  onOpen: (work: WorkEntry) => void;
 };
 
-const WorkCard = ({ locale, work, openLabel }: WorkCardProps) => {
+const WorkCard = ({ locale, work, openLabel, detailsLabel, onOpen }: WorkCardProps) => {
   const [isActive, setIsActive] = useState(false);
   const [palette, setPalette] = useState<string[]>(fallbackPalette);
   const [bars, setBars] = useState<RandomBar[]>([]);
@@ -192,13 +201,28 @@ const WorkCard = ({ locale, work, openLabel }: WorkCardProps) => {
     setIsActive(false);
   };
 
+  const openDetails = () => {
+    onOpen(work);
+  };
+
   return (
     <article
       className={clsx("work-card hard-cut", isActive && "work-card-active")}
       onPointerEnter={activate}
       onPointerLeave={deactivate}
     >
-      <div className="relative aspect-[4/5] overflow-hidden border border-industrial/35 bg-industrial">
+      <div
+        className="relative aspect-[4/5] cursor-pointer overflow-hidden border border-industrial/35 bg-industrial"
+        onClick={openDetails}
+        onKeyDown={(event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            openDetails();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      >
         <Image
           src={work.cover}
           alt={work.title[locale]}
@@ -241,16 +265,25 @@ const WorkCard = ({ locale, work, openLabel }: WorkCardProps) => {
             </span>
           ))}
         </div>
-        {work.links[0] ? (
-          <a
-            href={work.links[0].url}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={openDetails}
+            className="inline-flex items-center border border-industrial/60 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-industrial hard-cut hover:bg-industrial hover:text-paper"
           >
-            {openLabel}
-          </a>
-        ) : null}
+            {detailsLabel}
+          </button>
+          {work.links[0] ? (
+            <a
+              href={work.links[0].url}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
+            >
+              {openLabel}
+            </a>
+          ) : null}
+        </div>
       </div>
     </article>
   );
@@ -259,7 +292,25 @@ const WorkCard = ({ locale, work, openLabel }: WorkCardProps) => {
 export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
   const [activeTag, setActiveTag] = useState("all");
   const [activeYear, setActiveYear] = useState("all");
-  const [visibleCount, setVisibleCount] = useState(baseVisibleCount);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedWork, setSelectedWork] = useState<WorkEntry | null>(null);
+
+  const uiText: WorksWallUiText =
+    locale === "zh"
+      ? {
+          previous: "上一页",
+          next: "下一页",
+          page: "页",
+          details: "查看详情",
+          close: "关闭"
+        }
+      : {
+          previous: "Previous",
+          next: "Next",
+          page: "Page",
+          details: "Details",
+          close: "Close"
+        };
 
   const tags = useMemo(() => {
     return Array.from(new Set(works.flatMap((work) => work.tags))).sort();
@@ -277,18 +328,47 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
     });
   }, [activeTag, activeYear, works]);
 
-  const visibleWorks = filteredWorks.slice(0, visibleCount);
-  const canLoadMore = visibleCount < filteredWorks.length;
+  const totalPages = Math.max(1, Math.ceil(filteredWorks.length / pageSize));
+  const start = (currentPage - 1) * pageSize;
+  const visibleWorks = filteredWorks.slice(start, start + pageSize);
+  const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
 
   const handleTagChange = (nextTag: string) => {
     setActiveTag(nextTag);
-    setVisibleCount(baseVisibleCount);
+    setCurrentPage(1);
   };
 
   const handleYearChange = (nextYear: string) => {
     setActiveYear(nextYear);
-    setVisibleCount(baseVisibleCount);
+    setCurrentPage(1);
   };
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  useEffect(() => {
+    if (!selectedWork) {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedWork(null);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedWork]);
 
   return (
     <section id="works" className="mt-24 space-y-8">
@@ -346,19 +426,123 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
               locale={locale}
               work={work}
               openLabel={labels.open}
+              detailsLabel={uiText.details}
+              onOpen={setSelectedWork}
             />
           ))}
         </div>
       )}
 
-      {canLoadMore ? (
-        <button
-          type="button"
-          onClick={() => setVisibleCount((count) => count + loadMoreStep)}
-          className="inline-flex border border-industrial bg-industrial px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-paper hard-cut hover:bg-redline hover:border-redline"
+      {totalPages > 1 ? (
+        <nav aria-label={locale === "zh" ? "作品分页" : "Works pagination"} className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setCurrentPage((value) => Math.max(1, value - 1))}
+            disabled={currentPage === 1}
+            className="inline-flex border border-industrial px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-industrial hard-cut enabled:hover:bg-industrial enabled:hover:text-paper disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {uiText.previous}
+          </button>
+
+          {pageNumbers.map((pageNumber) => (
+            <button
+              key={pageNumber}
+              type="button"
+              onClick={() => setCurrentPage(pageNumber)}
+              aria-current={pageNumber === currentPage ? "page" : undefined}
+              className={clsx(
+                "inline-flex min-w-9 items-center justify-center border px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] hard-cut",
+                pageNumber === currentPage
+                  ? "border-industrial bg-industrial text-paper"
+                  : "border-industrial/45 text-industrial hover:border-industrial hover:bg-paper/70"
+              )}
+            >
+              {pageNumber}
+            </button>
+          ))}
+
+          <button
+            type="button"
+            onClick={() => setCurrentPage((value) => Math.min(totalPages, value + 1))}
+            disabled={currentPage === totalPages}
+            className="inline-flex border border-industrial px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-industrial hard-cut enabled:hover:bg-industrial enabled:hover:text-paper disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            {uiText.next}
+          </button>
+          <p className="ml-2 font-mono text-xs uppercase tracking-[0.16em] text-industrial/70">
+            {uiText.page} {currentPage}/{totalPages}
+          </p>
+        </nav>
+      ) : null}
+
+      {selectedWork ? (
+        <div
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-industrial/85 p-4"
+          onClick={() => setSelectedWork(null)}
         >
-          {labels.loadMore}
-        </button>
+          <article
+            className="max-h-[92vh] w-full max-w-5xl overflow-y-auto border border-paper/30 bg-paper"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-center justify-between border-b border-industrial/20 px-4 py-3 md:px-6">
+              <h3 className="poster-heading text-xl uppercase leading-none text-industrial md:text-2xl">
+                {selectedWork.title[locale]}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedWork(null)}
+                className="inline-flex border border-industrial px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-industrial hard-cut hover:bg-industrial hover:text-paper"
+              >
+                {uiText.close}
+              </button>
+            </header>
+
+            <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
+              <div className="relative aspect-[4/5] border-b border-industrial/20 bg-industrial lg:border-b-0 lg:border-r">
+                <Image
+                  src={selectedWork.cover}
+                  alt={selectedWork.title[locale]}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 58vw"
+                  className="object-cover"
+                />
+              </div>
+
+              <div className="space-y-5 p-4 md:p-6">
+                <p className="font-mono text-xs uppercase tracking-[0.18em] text-industrial/70">{selectedWork.year}</p>
+                <p className="text-base leading-relaxed text-industrial/85">{selectedWork.summary[locale]}</p>
+                {selectedWork.body ? (
+                  <p className="text-sm leading-relaxed text-industrial/80">{selectedWork.body}</p>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  {selectedWork.tags.map((tag) => (
+                    <span
+                      key={`${selectedWork.id}-modal-${tag}`}
+                      className="border border-industrial/35 px-2 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-industrial/70"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                {selectedWork.links.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedWork.links.map((link) => (
+                      <a
+                        key={`${selectedWork.id}-${link.url}`}
+                        href={link.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
+                      >
+                        {link.label[locale]}
+                      </a>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          </article>
+        </div>
       ) : null}
     </section>
   );

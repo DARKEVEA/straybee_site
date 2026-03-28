@@ -120,6 +120,7 @@ a {
   position: fixed;
   left: -100px;
   top: -100px;
+  transform: translate(-50%, -50%);
   width: 28px;
   height: 28px;
   z-index: 9999;
@@ -160,7 +161,8 @@ a {
     opacity: 0.9;
   }
 
-  .cursor-enabled {
+  .cursor-enabled,
+  .cursor-enabled * {
     cursor: none;
   }
 }
