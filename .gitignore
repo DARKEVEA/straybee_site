@@ -22,3 +22,6 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# origin images
+/public/images/origin

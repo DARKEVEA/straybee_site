@@ -60,7 +60,7 @@ export default async function LocalePage({ params }: LocalePageProps) {
 
           <div className="relative mx-auto w-full max-w-[680px] overflow-hidden border border-industrial/30 bg-industrial lg:mx-0 lg:justify-self-end">
             <Image
-              src="/images/hero/ordered-chaos.png"
+              src="/images/hero/ordered-chaos.webp"
               alt="Ordered Chaos visual schema"
               width={1148}
               height={1536}

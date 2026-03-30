@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "validate:works": "node scripts/validate-works.mjs"
+    "validate:works": "node scripts/validate-works.mjs",
+    "images:optimize": "node scripts/optimize-images.mjs --quality=72 --max-width=1800 --update-content",
+    "images:dry-run": "node scripts/optimize-images.mjs --quality=72 --max-width=1800 --dry-run"
   },
   "dependencies": {
     "clsx": "^2.1.1",
