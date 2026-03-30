@@ -60,7 +60,7 @@ export const CrosshairCursor = () => {
     <div
       aria-hidden
       className="crosshair-cursor"
-      style={{ left: `${position.x}px`, top: `${position.y}px` }}
+      style={{ transform: `translate3d(${position.x}px, ${position.y}px, 0)` }}
     >
       <span className="crosshair-line crosshair-line-x" />
       <span className="crosshair-line crosshair-line-y" />
