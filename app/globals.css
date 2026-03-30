@@ -160,7 +160,7 @@ a {
     opacity: 0.9;
   }
 
-  .cursor-enabled {
+  .cursor-enabled * {
     cursor: none;
   }
 }

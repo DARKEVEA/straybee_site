@@ -29,44 +29,43 @@ export default async function LocalePage({ params }: LocalePageProps) {
     <main lang={locale} className="poster-surface min-h-screen px-4 py-6 md:px-8 lg:px-12">
       <CrosshairCursor />
 
-      <div className="relative mx-auto max-w-[1500px]">
+      <div className="relative mx-auto w-full max-w-[1632px]">
         <span aria-hidden className="diagonal-line" />
 
-        <section className="relative grid gap-8 lg:grid-cols-[1.08fr_0.92fr]">
-          <div className="flex min-h-[66vh] flex-col justify-between gap-8 border border-industrial/30 bg-paper/90 p-6 md:min-h-[72vh] md:p-10 lg:p-12">
+        <section className="relative flex flex-col gap-10 lg:flex-row lg:items-stretch lg:justify-between">
+          <div className="flex flex-1 flex-col justify-between gap-8 border border-industrial/30 bg-paper/90 p-6 md:p-10 lg:self-stretch lg:p-12">
             <p className="font-mono text-xs uppercase tracking-[0.22em] text-industrial/70">{dictionary.hero.eyebrow}</p>
 
-            <div className="space-y-6">
-              <h1 className="poster-heading whitespace-pre-line text-6xl uppercase leading-[0.8] text-industrial sm:text-7xl md:text-8xl lg:text-[8.3rem]">
+            <div className="space-y-4 sm:space-y-6">
+              <h1 className="poster-heading whitespace-pre-line text-[clamp(3.825rem,7.225vw,9.775rem)] uppercase leading-[1.02] text-industrial">
                 ORDERED
                 {"\n"}CHAOS
               </h1>
-              <p className="poster-heading text-2xl uppercase leading-none text-redline md:text-3xl">STRAY BEE</p>
-              <p className="max-w-xl whitespace-pre-line text-lg uppercase leading-tight text-redline">
+              <p className="poster-heading text-[clamp(1.275rem,2.55vw,2.975rem)] uppercase leading-none text-redline">STRAY BEE</p>
+              <p className="max-w-xl whitespace-pre-line text-[clamp(0.85rem,1.19vw,1.275rem)] font-medium uppercase leading-tight text-redline">
                 {dictionary.hero.manifesto}
               </p>
-              <p className="max-w-2xl text-sm leading-relaxed text-industrial/85 md:text-base">{dictionary.hero.intro}</p>
+              <p className="max-w-2xl text-[clamp(0.744rem,0.935vw,0.956rem)] leading-relaxed text-industrial/85">{dictionary.hero.intro}</p>
             </div>
 
-            <div className="pt-2">
+            <div className="pt-6">
               <Link
                 href="#works"
-                className="inline-flex border border-redline bg-redline px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-paper hard-cut hover:bg-industrial hover:border-industrial"
+                className="inline-flex border border-redline bg-redline px-5 py-2.5 font-mono text-[clamp(0.638rem,0.765vw,0.744rem)] uppercase tracking-[0.2em] text-paper hard-cut hover:border-industrial hover:bg-industrial"
               >
                 {dictionary.hero.cta}
               </Link>
             </div>
           </div>
 
-          <div className="relative mx-auto w-full max-w-[680px] overflow-hidden border border-industrial/30 bg-industrial lg:mx-0 lg:justify-self-end">
+          <div className="relative mx-auto aspect-[3/4] w-full max-w-[680px] overflow-hidden border border-industrial/30 bg-industrial lg:mx-0 lg:w-[48%]">
             <Image
               src="/images/hero/ordered-chaos.webp"
               alt="Ordered Chaos visual schema"
-              width={1148}
-              height={1536}
+              fill
               priority
-              sizes="(max-width: 1024px) 90vw, 42vw"
-              className="h-auto w-full object-contain"
+              sizes="(max-width: 1024px) 92vw, (max-width: 1400px) 46vw, 44vw"
+              className="object-contain"
             />
             <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(245,242,234,0.2)_1px,transparent_1px),linear-gradient(to_bottom,rgba(245,242,234,0.2)_1px,transparent_1px)] bg-[size:74px_74px] mix-blend-screen" />
             <div className="absolute left-4 top-4 max-w-[220px] bg-paper/90 p-3 font-mono text-[0.62rem] uppercase leading-relaxed tracking-[0.16em] text-industrial">
