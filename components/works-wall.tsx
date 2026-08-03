@@ -161,12 +161,10 @@ const createRandomBars = (palette: string[]): RandomBar[] => {
 type WorkCardProps = {
   locale: Locale;
   work: WorkEntry;
-  openLabel: string;
-  detailsLabel: string;
   onOpen: (work: WorkEntry) => void;
 };
 
-const WorkCard = ({ locale, work, openLabel, detailsLabel, onOpen }: WorkCardProps) => {
+const WorkCard = ({ locale, work, onOpen }: WorkCardProps) => {
   const [isActive, setIsActive] = useState(false);
   const [palette, setPalette] = useState<string[]>(fallbackPalette);
   const [bars, setBars] = useState<RandomBar[]>([]);
@@ -242,41 +240,8 @@ const WorkCard = ({ locale, work, openLabel, detailsLabel, onOpen }: WorkCardPro
         </div>
       </div>
 
-      <div className="space-y-3 border-x border-b border-industrial/35 bg-paper/95 p-4">
-        <div className="flex items-start justify-between gap-4">
-          <h3 className="poster-heading text-xl leading-none text-industrial">{work.title[locale]}</h3>
-          <span className="font-mono text-xs uppercase tracking-[0.16em] text-industrial/70">{work.year}</span>
-        </div>
-        <p className="text-sm leading-relaxed text-industrial/85">{work.summary[locale]}</p>
-        <div className="flex flex-wrap gap-2">
-          {work.tags.map((tag) => (
-            <span
-              key={`${work.id}-${tag}`}
-              className="border border-industrial/30 px-2 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-industrial/70"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={openDetails}
-            className="inline-flex items-center border border-industrial/60 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-industrial hard-cut hover:bg-industrial hover:text-paper"
-          >
-            {detailsLabel}
-          </button>
-          {work.links[0] ? (
-            <a
-              href={work.links[0].url}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
-            >
-              {openLabel}
-            </a>
-          ) : null}
-        </div>
+      <div className="border-x border-b border-industrial/35 bg-paper/95 p-4">
+        <h3 className="poster-heading text-xl leading-none text-industrial">{work.title[locale]}</h3>
       </div>
     </article>
   );
@@ -288,7 +253,6 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedWork, setSelectedWork] = useState<WorkEntry | null>(null);
 
-  const detailsLabel = locale === "zh" ? "查看详情" : "Details";
   const closeLabel = locale === "zh" ? "关闭" : "Close";
   const prevLabel = locale === "zh" ? "上一页" : "Prev";
   const nextLabel = locale === "zh" ? "下一页" : "Next";
@@ -420,8 +384,6 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
               key={work.id}
               locale={locale}
               work={work}
-              openLabel={labels.open}
-              detailsLabel={detailsLabel}
               onOpen={setSelectedWork}
             />
           ))}
@@ -494,8 +456,8 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
                   </button>
                 </header>
 
-                <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
-                  <div className="relative aspect-[4/5] border-b border-industrial/20 bg-industrial lg:border-b-0 lg:border-r">
+                <div>
+                  <div className="relative aspect-[4/5] bg-industrial">
                     <Image
                       src={selectedWork.cover}
                       alt={selectedWork.title[locale]}
@@ -505,38 +467,6 @@ export const WorksWall = ({ locale, works, labels }: WorksWallProps) => {
                     />
                   </div>
 
-                  <div className="space-y-5 p-4 md:p-6">
-                    <p className="font-mono text-xs uppercase tracking-[0.18em] text-industrial/70">{selectedWork.year}</p>
-                    <p className="text-base leading-relaxed text-industrial/85">{selectedWork.summary[locale]}</p>
-                    {selectedWork.body ? (
-                      <p className="text-sm leading-relaxed text-industrial/80">{selectedWork.body}</p>
-                    ) : null}
-                    <div className="flex flex-wrap gap-2">
-                      {selectedWork.tags.map((tag) => (
-                        <span
-                          key={`${selectedWork.id}-modal-${tag}`}
-                          className="border border-industrial/35 px-2 py-1 font-mono text-[0.65rem] uppercase tracking-[0.16em] text-industrial/70"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    {selectedWork.links.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
-                        {selectedWork.links.map((link) => (
-                          <a
-                            key={`${selectedWork.id}-${link.url}`}
-                            href={link.url}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center border border-redline/70 px-3 py-1.5 font-mono text-xs uppercase tracking-[0.16em] text-redline hard-cut hover:bg-redline hover:text-paper"
-                          >
-                            {link.label[locale]}
-                          </a>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
                 </div>
               </article>
             </div>,

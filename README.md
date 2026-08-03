@@ -33,3 +33,12 @@ npm run dev
 ```bash
 npm run validate:works
 ```
+
+## Work image naming
+
+Use lowercase kebab-case filenames based on the work slug:
+
+- Cover: `{work-slug}-cover.{ext}`
+- Gallery: `{work-slug}-gallery-{nn}.{ext}`
+
+Examples: `signal-atlas-cover.png`, `signal-atlas-gallery-01.webp`.

@@ -38,6 +38,18 @@ if (files.length === 0) {
 
 const ids = new Set();
 const slugs = new Set();
+const imageExtension = "(?:avif|jpe?g|png|webp)";
+
+const assertImageExists = async (imagePath, fileName) => {
+  const relativePath = imagePath.replace(/^\/+/, "");
+  const fullPath = path.join(process.cwd(), "public", relativePath);
+
+  try {
+    await fs.access(fullPath);
+  } catch {
+    throw new Error(`Missing image in ${fileName}: ${imagePath}`);
+  }
+};
 
 for (const fileName of files) {
   const fullPath = path.join(worksDir, fileName);
@@ -55,6 +67,24 @@ for (const fileName of files) {
   }
   if (slugs.has(parsed.data.slug)) {
     throw new Error(`Duplicate slug detected: ${parsed.data.slug}`);
+  }
+
+  const escapedSlug = parsed.data.slug.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const coverPattern = new RegExp(`^/images/works/${escapedSlug}-cover\\.${imageExtension}$`);
+  if (!coverPattern.test(parsed.data.cover)) {
+    throw new Error(`Invalid cover name in ${fileName}: expected /images/works/${parsed.data.slug}-cover.{ext}`);
+  }
+
+  await assertImageExists(parsed.data.cover, fileName);
+
+  const galleryPattern = new RegExp(`^/images/works/${escapedSlug}-gallery-\\d{2}\\.${imageExtension}$`);
+  for (const galleryImage of parsed.data.gallery) {
+    if (!galleryPattern.test(galleryImage)) {
+      throw new Error(
+        `Invalid gallery image name in ${fileName}: expected /images/works/${parsed.data.slug}-gallery-{nn}.{ext}`
+      );
+    }
+    await assertImageExists(galleryImage, fileName);
   }
 
   ids.add(parsed.data.id);

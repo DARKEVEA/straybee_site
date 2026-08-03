@@ -81,10 +81,10 @@ export default async function LocalePage({ params }: LocalePageProps) {
           <div className="space-y-4">
             <p className="max-w-2xl text-sm leading-relaxed text-paper/90 md:text-base">{dictionary.contact.body}</p>
             <a
-              href="mailto:hello@straybee.dev"
+              href="mailto:DARKEVEA@proton.me"
               className="inline-flex border border-warning px-4 py-2 font-mono text-xs uppercase tracking-[0.2em] text-warning hard-cut hover:bg-warning hover:text-industrial"
             >
-              {dictionary.contact.emailLabel}: hello@straybee.dev
+              {dictionary.contact.emailLabel}: DARKEVEA@proton.me
             </a>
           </div>
         </section>
